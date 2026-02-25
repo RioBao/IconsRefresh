@@ -29,11 +29,12 @@ You can download the application on the [**releases page**](https://github.com/c
 
 ```text
 IconsRefresh.exe [--dry-run] [--json] <quick|standard|deep>
+IconsRefresh-tray.exe [--preset quick|standard|deep] [--dry-run] [--json]
 ```
 
-- `quick`: shell notification + `ie4uinit.exe -show` only
-- `standard`: `quick` + Explorer iconcache DB cleanup
-- `deep`: `standard` + Search `AppIconCache` cleanup
+- CLI presets map to the shared `internal/engine` orchestration API.
+- Tray presets call the same engine API with `tray-*` trigger metadata.
+- Event hooks are available for future monitor automation (resolution changes, shell restarts).
 - `--dry-run`: print planned actions without deleting cache files
 - `--json`: emit a machine-readable execution report
 
@@ -44,7 +45,8 @@ IconsRefresh.exe [--dry-run] [--json] <quick|standard|deep>
 ```
 go mod download
 go generate -v
-go build -o bin/IconsRefresh.exe -v -ldflags "-s -w -v -H=windowsgui"
+go build -o bin/IconsRefresh.exe -v -ldflags "-s -w -v -H=windowsgui" ./cmd/iconsrefresh
+go build -o bin/IconsRefresh-tray.exe -v -ldflags "-s -w -v -H=windowsgui" ./cmd/iconsrefresh-tray
 ```
 
 ## How can I help?
