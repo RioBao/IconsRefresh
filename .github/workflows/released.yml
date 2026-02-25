@@ -18,7 +18,9 @@ jobs:
           update_release_body: false
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            IconsRefresh.exe
+            IconsRefresh_windows_amd64.exe
+            IconsRefresh_windows_arm64.exe
+            IconsRefresh_windows_386.exe
       -
         name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v2
@@ -27,4 +29,6 @@ jobs:
           update_release_body: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            IconsRefresh.exe
+            IconsRefresh_windows_amd64.exe
+            IconsRefresh_windows_arm64.exe
+            IconsRefresh_windows_386.exe
