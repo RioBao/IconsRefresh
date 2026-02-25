@@ -9,12 +9,9 @@
   <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
   <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
 </p>
+## :warning: Update 2026: Trying to review this project
 
-## :warning: Abandoned project
-
-This project is not maintained anymore and is abandoned. Feel free to fork and make your own changes if needed.
-
-Thanks to everyone for their valuable feedback and contributions.
+This project stopped being maintained many years ago. With the help of AI I want to review it, since its really helpful.
 
 ## About
 
@@ -23,38 +20,11 @@ without restart Explorer on Windows.
 
 ## Download
 
-You can download the application on the [**releases page**](https://github.com/crazy-max/IconsRefresh/releases/latest).
+TBD
 
 ## Usage
 
-```text
-IconsRefresh.exe [--dry-run] [--json] <quick|standard|deep>
-```
-
-- `quick`: shell notification + `ie4uinit.exe -show` only
-- `standard`: `quick` + Explorer iconcache DB cleanup
-- `deep`: `standard` + Search `AppIconCache` cleanup
-- `--dry-run`: print planned actions without deleting cache files
-- `--json`: emit a machine-readable execution report
-
-## Build
-
-> Go 1.14 or higher required
-
-```
-go mod download
-go generate -v
-go build -o bin/IconsRefresh.exe -v -ldflags "-s -w -v -H=windowsgui"
-```
-
-## How can I help?
-
-All kinds of contributions are welcome :raised_hands:! The most basic way to show your support is to star :star2: the
-project, or to raise issues :speech_balloon: You can also support this project by
-[**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max) :clap: or by making a
-[Paypal donation](https://www.paypal.me/crazyws) to ensure this journey continues indefinitely! :rocket:
-
-Thanks again for your support, it is much appreciated! :pray:
+TBD
 
 ## License
 
