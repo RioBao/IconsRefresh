@@ -74,7 +74,10 @@ func run(cfg config) error {
 	if cfg.JSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(result)
+		if err := enc.Encode(result); err != nil {
+			return err
+		}
+		return deleteFailureError(result)
 	}
 
 	if result.IE4UInit != nil {
@@ -88,7 +91,27 @@ func run(cfg config) error {
 		fmt.Println()
 	}
 
+	if err := deleteFailureError(result); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func deleteFailureError(result repair.Result) error {
+	failed := make([]string, 0)
+	for _, p := range result.Paths {
+		if p.Error == "" || p.Skipped {
+			continue
+		}
+		failed = append(failed, fmt.Sprintf("%s: %s", p.Path, p.Error))
+	}
+
+	if len(failed) == 0 {
+		return nil
+	}
+
+	return fmt.Errorf("failed to delete %d target(s): %s", len(failed), strings.Join(failed, "; "))
 }
 
 func printDryRun(cfg config, selected []repair.Target) error {
