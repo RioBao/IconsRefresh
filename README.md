@@ -9,7 +9,7 @@
   <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
   <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
 </p>
-## :warning: Update 2026: Trying to review this project
+## Update 2026: Trying to revive this project
 
 This project stopped being maintained many years ago. With the help of AI I want to review it, since its really helpful.
 
