@@ -1,11 +1,13 @@
+//go:build windows
+// +build windows
+
 //go:generate go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo
 //go:generate goversioninfo -icon=.github/logo.ico
 package main
 
 import (
+	"syscall"
 	"unsafe"
-
-	"golang.org/x/sys/windows"
 )
 
 const (
@@ -19,14 +21,14 @@ const (
 
 func main() {
 	// https://docs.microsoft.com/en-us/windows/desktop/api/shlobj_core/nf-shlobj_core-shchangenotify
-	windows.NewLazyDLL("shell32.dll").NewProc("SHChangeNotify").Call(
+	syscall.NewLazyDLL("shell32.dll").NewProc("SHChangeNotify").Call(
 		uintptr(SHCNE_ASSOCCHANGED),
 		uintptr(SHCNF_IDLIST),
 		0, 0)
 
 	// https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-sendmessagetimeoutw
-	env, _ := windows.UTF16PtrFromString("Environment")
-	windows.NewLazyDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(
+	env, _ := syscall.UTF16PtrFromString("Environment")
+	syscall.NewLazyDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(
 		uintptr(HWND_BROADCAST),
 		uintptr(WM_SETTINGCHANGE),
 		0,

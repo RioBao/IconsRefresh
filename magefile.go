@@ -1,3 +1,4 @@
+//go:build mage
 // +build mage
 
 package main
@@ -6,10 +7,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -21,28 +22,60 @@ import (
 var Default = Build
 
 var (
-	binPath     = path.Join("bin")
-	releasePath = path.Join(binPath, "IconsRefresh.exe")
-	goEnv       = map[string]string{
+	binPath = path.Join("bin")
+	goEnv   = map[string]string{
 		"GO111MODULE": "on",
 		"GOOS":        "windows",
-		"GOARCH":      "386",
 		"CGO_ENABLED": "0",
 	}
 )
 
-// Build Run go build
+// Build builds one or more Windows binaries.
+//
+// Defaults to amd64 only.
+// Optional targets:
+//   - set ICONSREFRESH_BUILD_ARM64=1 to include arm64
+//   - set ICONSREFRESH_BUILD_386=1 to include 386
 func Build() error {
 	mg.Deps(Clean)
 	mg.Deps(Generate)
 
-	var args []string
-	args = append(args, "build", "-o", releasePath, "-v")
-	args = append(args, "-ldflags", "-s -w -H=windowsgui")
+	resourcePath := "resource.syso"
+	hasResource := fileExists(resourcePath)
 
-	fmt.Println("⚙️ Go build...")
-	if err := sh.RunWith(goEnv, mg.GoCmd(), args...); err != nil {
-		return err
+	for _, arch := range buildArchMatrix() {
+		resourceDisabled := false
+		if arch == "arm64" && hasResource {
+			if err := os.Rename(resourcePath, resourcePath+".bak"); err != nil {
+				return err
+			}
+			resourceDisabled = true
+		}
+		output := releasePath(arch)
+		args := []string{
+			"build",
+			"-trimpath",
+			"-buildvcs=false",
+			"-o", output,
+			"-v",
+			"-ldflags", "-s -w -buildid= -H=windowsgui",
+		}
+
+		env := mapsClone(goEnv)
+		env["GOARCH"] = arch
+
+		fmt.Printf("⚙️ Go build (%s) -> %s...\n", arch, output)
+		if err := sh.RunWith(env, mg.GoCmd(), args...); err != nil {
+			if resourceDisabled {
+				_ = os.Rename(resourcePath+".bak", resourcePath)
+			}
+			return err
+		}
+		if resourceDisabled {
+			if err := os.Rename(resourcePath+".bak", resourcePath); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -80,6 +113,39 @@ func Download() error {
 	}
 
 	return nil
+}
+
+func buildArchMatrix() []string {
+	arches := []string{"amd64"}
+	if envTrue("ICONSREFRESH_BUILD_ARM64") {
+		arches = append(arches, "arm64")
+	}
+	if envTrue("ICONSREFRESH_BUILD_386") {
+		arches = append(arches, "386")
+	}
+	return arches
+}
+
+func envTrue(key string) bool {
+	value := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
+	return slices.Contains([]string{"1", "true", "yes", "on"}, value)
+}
+
+func releasePath(arch string) string {
+	return path.Join(binPath, fmt.Sprintf("IconsRefresh_windows_%s.exe", arch))
+}
+
+func mapsClone(input map[string]string) map[string]string {
+	output := make(map[string]string, len(input))
+	for k, v := range input {
+		output[k] = v
+	}
+	return output
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // mod returns module name
@@ -167,7 +233,7 @@ func versionInfo() error {
 
 func createDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return os.MkdirAll(path, 777)
+		return os.MkdirAll(path, 0o777)
 	}
 	return nil
 }
@@ -193,7 +259,7 @@ func cleanDir(dir string) error {
 
 func copyDir(src string, dst string) error {
 	var err error
-	var fds []os.FileInfo
+	var fds []os.DirEntry
 	var srcinfo os.FileInfo
 
 	if srcinfo, err = os.Stat(src); err != nil {
@@ -204,7 +270,7 @@ func copyDir(src string, dst string) error {
 		return err
 	}
 
-	if fds, err = ioutil.ReadDir(src); err != nil {
+	if fds, err = os.ReadDir(src); err != nil {
 		return err
 	}
 
