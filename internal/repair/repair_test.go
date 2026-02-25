@@ -31,6 +31,9 @@ func TestTargetsForMode(t *testing.T) {
 		{Path: "c", Kind: TargetSearchAppCache},
 	}
 
+	if got := len(TargetsForMode(targets, ModeQuick)); got != 1 {
+		t.Fatalf("quick mode expected 1 target, got %d", got)
+	}
 	if got := len(TargetsForMode(targets, ModeSoft)); got != 1 {
 		t.Fatalf("soft mode expected 1 target, got %d", got)
 	}
@@ -39,6 +42,50 @@ func TestTargetsForMode(t *testing.T) {
 	}
 	if got := len(TargetsForMode(targets, ModeDeep)); got != 3 {
 		t.Fatalf("deep mode expected 3 targets, got %d", got)
+	}
+}
+
+func TestShouldRunIE4UInit(t *testing.T) {
+	testCases := []struct {
+		mode Mode
+		want bool
+	}{
+		{mode: ModeQuick, want: true},
+		{mode: ModeSoft, want: false},
+		{mode: ModeStandard, want: true},
+		{mode: ModeDeep, want: true},
+	}
+
+	for _, tc := range testCases {
+		if got := ShouldRunIE4UInit(tc.mode); got != tc.want {
+			t.Fatalf("ShouldRunIE4UInit(%q)=%v, want %v", tc.mode, got, tc.want)
+		}
+	}
+}
+
+func TestDeleteTargetsForMode(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("LOCALAPPDATA", tempDir)
+	t.Setenv("PATH", t.TempDir())
+
+	valid := filepath.Join(tempDir, "IconCache.db")
+	mustWriteFile(t, valid)
+
+	quickResult := DeleteTargetsForMode(ModeQuick, []Target{{Path: valid}})
+	if quickResult.IE4UInit == nil {
+		t.Fatal("expected ie4uinit result for quick mode")
+	}
+	if len(quickResult.Paths) != 1 || !quickResult.Paths[0].Deleted {
+		t.Fatalf("unexpected quick deletion result: %+v", quickResult.Paths)
+	}
+
+	mustWriteFile(t, valid)
+	softResult := DeleteTargetsForMode(ModeSoft, []Target{{Path: valid}})
+	if softResult.IE4UInit != nil {
+		t.Fatal("did not expect ie4uinit result for soft mode")
+	}
+	if len(softResult.Paths) != 1 || !softResult.Paths[0].Deleted {
+		t.Fatalf("unexpected soft deletion result: %+v", softResult.Paths)
 	}
 }
 

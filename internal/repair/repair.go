@@ -6,12 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	internalwindows "github.com/crazy-max/IconsRefresh/internal/windows"
 )
 
 // Mode defines how aggressive cache repair should be.
 type Mode string
 
 const (
+	ModeQuick    Mode = "quick"
 	ModeSoft     Mode = "soft"
 	ModeStandard Mode = "standard"
 	ModeDeep     Mode = "deep"
@@ -43,7 +46,8 @@ type PathResult struct {
 
 // Result contains path-level outcomes for a repair execution.
 type Result struct {
-	Paths []PathResult
+	IE4UInit *internalwindows.IE4UInitResult
+	Paths    []PathResult
 }
 
 // DiscoverCacheTargets finds known Windows icon cache paths in LOCALAPPDATA.
@@ -99,6 +103,8 @@ func TargetsForMode(targets []Target, mode Mode) []Target {
 
 func modeIncludesKind(mode Mode, kind TargetKind) bool {
 	switch mode {
+	case ModeQuick:
+		return kind == TargetIconCacheDB
 	case ModeSoft:
 		return kind == TargetIconCacheDB
 	case ModeStandard:
@@ -108,6 +114,29 @@ func modeIncludesKind(mode Mode, kind TargetKind) bool {
 	default:
 		return false
 	}
+}
+
+// ShouldRunIE4UInit reports whether the ie4uinit compatibility refresh should run for the mode.
+func ShouldRunIE4UInit(mode Mode) bool {
+	switch mode {
+	case ModeQuick, ModeStandard, ModeDeep:
+		return true
+	default:
+		return false
+	}
+}
+
+// DeleteTargetsForMode executes mode-specific pre-delete actions and then deletes targets.
+func DeleteTargetsForMode(mode Mode, targets []Target) Result {
+	result := Result{}
+	if ShouldRunIE4UInit(mode) {
+		ie4uinitResult := internalwindows.RunIE4UInitShow()
+		result.IE4UInit = &ie4uinitResult
+	}
+
+	deletion := DeleteTargets(targets)
+	result.Paths = deletion.Paths
+	return result
 }
 
 // ValidateCandidate ensures a path is present and matches one of the expected safe locations.
