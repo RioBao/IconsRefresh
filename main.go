@@ -1,3 +1,6 @@
+//go:build windows
+// +build windows
+
 //go:generate go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo
 //go:generate goversioninfo -icon=.github/logo.ico
 package main
@@ -24,6 +27,8 @@ const (
 	HWND_BROADCAST   = 0xFFFF
 	WM_SETTINGCHANGE = 0x001A
 	SMTO_ABORTIFHUNG = 0x0002
+	"fmt"
+	"os"
 )
 
 const (
@@ -245,14 +250,13 @@ func shellNotify() {
 		uintptr(SHCNE_ASSOCCHANGED),
 		uintptr(SHCNF_IDLIST),
 		0, 0)
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, usage())
+		os.Exit(2)
+	}
 
-	// https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-sendmessagetimeoutw
-	env, _ := windows.UTF16PtrFromString("Environment")
-	windows.NewLazyDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(
-		uintptr(HWND_BROADCAST),
-		uintptr(WM_SETTINGCHANGE),
-		0,
-		uintptr(unsafe.Pointer(env)),
-		uintptr(SMTO_ABORTIFHUNG),
-		uintptr(5000))
+	if err := run(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
 }
