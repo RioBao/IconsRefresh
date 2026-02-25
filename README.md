@@ -28,11 +28,12 @@ You can download the application on the [**releases page**](https://github.com/c
 ## Usage
 
 ```text
-IconsRefresh.exe [--dry-run] [--json] <quick|standard|deep>
+IconsRefresh.exe [--dry-run] [--json] <quick|soft|standard|deep>
 ```
 
 - `quick`: shell notification + `ie4uinit.exe -show` only
-- `standard`: `quick` + Explorer iconcache DB cleanup
+- `soft`: IconCache.db cleanup only
+- `standard`: `soft` + Explorer iconcache DB cleanup
 - `deep`: `standard` + Search `AppIconCache` cleanup
 - `--dry-run`: print planned actions without deleting cache files
 - `--json`: emit a machine-readable execution report
