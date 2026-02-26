@@ -59,6 +59,7 @@ func Build() error {
 			"-o", output,
 			"-v",
 			"-ldflags", "-s -w -buildid= -H=windowsgui",
+			"./cmd/iconsrefresh",
 		}
 
 		env := mapsClone(goEnv)

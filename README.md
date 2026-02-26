@@ -24,7 +24,20 @@ TBD
 
 ## Usage
 
-TBD
+```text
+IconsRefresh.exe [--dry-run] [--json] <quick|standard|deep>
+IconsRefresh-tray.exe [--preset quick|standard|deep] [--dry-run] [--json]
+```
+
+- CLI presets map to the shared `internal/engine` orchestration API.
+- Tray presets call the same engine API with `tray-*` trigger metadata.
+- Event hooks are available for future monitor automation (resolution changes, shell restarts).
+- `--dry-run`: print planned actions without deleting cache files
+- `--json`: emit a machine-readable execution report
+
+## Build
+TBD 
+
 
 ## License
 

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/crazy-max/IconsRefresh/internal/repair"
+	"github.com/crazy-max/IconsRefresh/internal/engine"
 )
 
 func TestParseArgs_RequiresMode(t *testing.T) {
@@ -32,8 +32,8 @@ func TestParseArgs_ParsesValidMode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseArgs() error = %v", err)
 	}
-	if cfg.Mode != repair.ModeStandard {
-		t.Fatalf("mode = %q, want %q", cfg.Mode, repair.ModeStandard)
+	if cfg.Preset != engine.PresetCLIStandard {
+		t.Fatalf("preset = %q, want %q", cfg.Preset, engine.PresetCLIStandard)
 	}
 	if !cfg.DryRun || !cfg.JSON {
 		t.Fatalf("expected dry-run and json flags enabled: %+v", cfg)

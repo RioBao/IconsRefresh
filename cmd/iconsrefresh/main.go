@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -8,16 +9,31 @@ import (
 	"os"
 	"strings"
 
-	"github.com/crazy-max/IconsRefresh/internal/repair"
+	"github.com/crazy-max/IconsRefresh/internal/engine"
 )
 
 type config struct {
-	Mode   repair.Mode
+	Preset engine.Preset
 	DryRun bool
 	JSON   bool
 }
 
 var errUsage = errors.New("usage error")
+
+func main() {
+	cfg, err := parseArgs(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, usage())
+		os.Exit(2)
+	}
+
+	if err := run(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+}
 
 func parseArgs(args []string) (config, error) {
 	cfg := config{}
@@ -38,10 +54,13 @@ func parseArgs(args []string) (config, error) {
 		return config{}, fmt.Errorf("%w: expected one <mode>, got %d", errUsage, len(positional))
 	}
 
-	mode := repair.Mode(strings.ToLower(strings.TrimSpace(positional[0])))
-	switch mode {
-	case repair.ModeQuick, repair.ModeSoft, repair.ModeStandard, repair.ModeDeep:
-		cfg.Mode = mode
+	switch strings.ToLower(strings.TrimSpace(positional[0])) {
+	case "quick":
+		cfg.Preset = engine.PresetCLIQuick
+	case "standard":
+		cfg.Preset = engine.PresetCLIStandard
+	case "deep":
+		cfg.Preset = engine.PresetCLIDeep
 	default:
 		return config{}, fmt.Errorf("%w: invalid mode %q", errUsage, positional[0])
 	}
@@ -54,33 +73,38 @@ func usage() string {
 
 Modes:
   quick      Run shell refresh and clean IconCache.db only
-  soft       Clean IconCache.db only
   standard   Clean IconCache.db and Explorer iconcache_*.db
   deep       Standard mode + Search AppIconCache cleanup`)
 }
 
 func run(cfg config) error {
-	targets, err := repair.DiscoverCacheTargets()
+	request, err := engine.RequestForPreset(cfg.Preset, cfg.DryRun)
 	if err != nil {
-		return fmt.Errorf("discover cache targets: %w", err)
+		return err
 	}
 
-	selected := repair.TargetsForMode(targets, cfg.Mode)
-	if cfg.DryRun {
-		return printDryRun(cfg, selected)
-	}
-
-	result := repair.DeleteTargetsForMode(cfg.Mode, selected)
+	eng := engine.New(engine.Hooks{})
+	result, err := eng.Run(context.Background(), request)
 	if cfg.JSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(result)
+		if encodeErr := enc.Encode(result); encodeErr != nil {
+			return encodeErr
+		}
+	}
+	if err != nil {
+		return err
 	}
 
-	if result.IE4UInit != nil {
-		fmt.Printf("ie4uinit: ran=%t exit=%d warning=%q\n", result.IE4UInit.Ran, result.IE4UInit.ExitCode, result.IE4UInit.Warning)
+	if cfg.JSON {
+		return nil
 	}
-	for _, p := range result.Paths {
+
+	fmt.Printf("mode=%s dry-run=%t targets=%d\n", result.Mode, result.DryRun, len(result.Targets))
+	if result.Result.IE4UInit != nil {
+		fmt.Printf("ie4uinit: ran=%t exit=%d warning=%q\n", result.Result.IE4UInit.Ran, result.Result.IE4UInit.ExitCode, result.Result.IE4UInit.Warning)
+	}
+	for _, p := range result.Result.Paths {
 		fmt.Printf("path=%q found=%t deleted=%t skipped=%t", p.Path, p.Found, p.Deleted, p.Skipped)
 		if p.Error != "" {
 			fmt.Printf(" error=%q", p.Error)
@@ -88,19 +112,5 @@ func run(cfg config) error {
 		fmt.Println()
 	}
 
-	return nil
-}
-
-func printDryRun(cfg config, selected []repair.Target) error {
-	if cfg.JSON {
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(selected)
-	}
-
-	fmt.Printf("mode=%s dry-run=true targets=%d\n", cfg.Mode, len(selected))
-	for _, t := range selected {
-		fmt.Printf("%s\t%s\n", t.Kind, t.Path)
-	}
 	return nil
 }
