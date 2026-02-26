@@ -127,16 +127,19 @@ func ShouldRunIE4UInit(mode Mode) bool {
 	}
 }
 
-// DeleteTargetsForMode executes mode-specific pre-delete actions and then deletes targets.
+// DeleteTargetsForMode deletes cache targets, then runs shell refresh steps.
+// Order matters: files must be gone before notifying the shell so Explorer
+// rebuilds the cache from scratch rather than reloading stale data.
 func DeleteTargetsForMode(mode Mode, targets []Target) Result {
 	result := Result{}
+
+	deletion := DeleteTargets(targets)
+	result.Paths = deletion.Paths
+
 	if ShouldRunIE4UInit(mode) {
 		ie4uinitResult := internalwindows.RunIE4UInitShow()
 		result.IE4UInit = &ie4uinitResult
 	}
-
-	deletion := DeleteTargets(targets)
-	result.Paths = deletion.Paths
 
 	notifyResult := internalwindows.NotifyShellRefresh(5000)
 	result.ShellNotify = &notifyResult
