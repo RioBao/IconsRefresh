@@ -46,8 +46,9 @@ type PathResult struct {
 
 // Result contains path-level outcomes for a repair execution.
 type Result struct {
-	IE4UInit *internalwindows.IE4UInitResult
-	Paths    []PathResult
+	IE4UInit    *internalwindows.IE4UInitResult
+	ShellNotify *internalwindows.ShellNotifyResult
+	Paths       []PathResult
 }
 
 // DiscoverCacheTargets finds known Windows icon cache paths in LOCALAPPDATA.
@@ -136,6 +137,9 @@ func DeleteTargetsForMode(mode Mode, targets []Target) Result {
 
 	deletion := DeleteTargets(targets)
 	result.Paths = deletion.Paths
+
+	notifyResult := internalwindows.NotifyShellRefresh(5000)
+	result.ShellNotify = &notifyResult
 	return result
 }
 

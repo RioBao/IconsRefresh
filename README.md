@@ -27,7 +27,20 @@ You can download the application on the [**releases page**](https://github.com/c
 
 ## Usage
 
-Launch `IconsRefresh.exe`
+```
+IconsRefresh.exe [--dry-run] [--json] <mode>
+
+Modes:
+  quick      Run ie4uinit + shell notifications, then clean IconCache.db
+  soft       Clean IconCache.db only, then shell notifications
+  standard   Clean IconCache.db and Explorer iconcache_*.db, then refresh shell
+  deep       Standard mode + Search AppIconCache cleanup, then refresh shell
+```
+
+Windows 11 cache targets:
+- `%LocalAppData%\IconCache.db`
+- `%LocalAppData%\Microsoft\Windows\Explorer\iconcache_*.db`
+- `%LocalAppData%\Packages\Microsoft.Windows.Search_*\LocalState\AppIconCache`
 
 ## Build
 

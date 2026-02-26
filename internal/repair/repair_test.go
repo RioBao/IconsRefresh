@@ -78,6 +78,9 @@ func TestDeleteTargetsForMode(t *testing.T) {
 	if len(quickResult.Paths) != 1 || !quickResult.Paths[0].Deleted {
 		t.Fatalf("unexpected quick deletion result: %+v", quickResult.Paths)
 	}
+	if quickResult.ShellNotify == nil {
+		t.Fatal("expected shell notify result for quick mode")
+	}
 
 	mustWriteFile(t, valid)
 	softResult := DeleteTargetsForMode(ModeSoft, []Target{{Path: valid}})
@@ -86,6 +89,9 @@ func TestDeleteTargetsForMode(t *testing.T) {
 	}
 	if len(softResult.Paths) != 1 || !softResult.Paths[0].Deleted {
 		t.Fatalf("unexpected soft deletion result: %+v", softResult.Paths)
+	}
+	if softResult.ShellNotify == nil {
+		t.Fatal("expected shell notify result for soft mode")
 	}
 }
 
