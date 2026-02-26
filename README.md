@@ -31,7 +31,7 @@ You can download the application on the [**releases page**](https://github.com/c
 IconsRefresh.exe [--dry-run] [--json] <quick|soft|standard|deep>
 ```
 
-- `quick`: shell notification + `ie4uinit.exe -show` only
+- `quick`: shell notification + `ie4uinit.exe -show` + `IconCache.db` cleanup
 - `soft`: IconCache.db cleanup only
 - `standard`: `soft` + Explorer iconcache DB cleanup
 - `deep`: `standard` + Search `AppIconCache` cleanup
