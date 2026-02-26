@@ -45,6 +45,8 @@ func parseTrayPreset(input string) (engine.Preset, error) {
 	switch strings.ToLower(strings.TrimSpace(input)) {
 	case "quick":
 		return engine.PresetTrayQuick, nil
+	case "soft":
+		return engine.PresetTraySoft, nil
 	case "standard":
 		return engine.PresetTrayStandard, nil
 	case "deep":

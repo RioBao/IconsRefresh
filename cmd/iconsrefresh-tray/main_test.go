@@ -13,6 +13,7 @@ func TestParseTrayPreset(t *testing.T) {
 		ok    bool
 	}{
 		{input: "quick", want: engine.PresetTrayQuick, ok: true},
+		{input: "soft", want: engine.PresetTraySoft, ok: true},
 		{input: "standard", want: engine.PresetTrayStandard, ok: true},
 		{input: "deep", want: engine.PresetTrayDeep, ok: true},
 		{input: "invalid", ok: false},

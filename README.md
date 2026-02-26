@@ -14,18 +14,37 @@ TBD
 ## Usage
 
 ```text
-IconsRefresh.exe [--dry-run] [--json] <quick|standard|deep>
-IconsRefresh-tray.exe [--preset quick|standard|deep] [--dry-run] [--json]
+IconsRefresh.exe [--dry-run] [--json] <quick|soft|standard|deep>
+IconsRefresh-tray.exe [--preset quick|soft|standard|deep] [--dry-run] [--json]
 ```
 
-- CLI presets map to the shared `internal/engine` orchestration API.
-- Tray presets call the same engine API with `tray-*` trigger metadata.
-- Event hooks are available for future monitor automation (resolution changes, shell restarts).
+Modes:
+
+| Mode | ie4uinit | Shell notify | IconCache.db | Explorer iconcache_*.db | AppIconCache |
+|------|----------|--------------|--------------|-------------------------|--------------|
+| `quick` | ✓ | ✓ | ✓ | | |
+| `soft` | | ✓ | ✓ | | |
+| `standard` | ✓ | ✓ | ✓ | ✓ | |
+| `deep` | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+Windows 11 cache targets:
+- `%LocalAppData%\IconCache.db`
+- `%LocalAppData%\Microsoft\Windows\Explorer\iconcache_*.db`
+- `%LocalAppData%\Packages\Microsoft.Windows.Search_*\LocalState\AppIconCache`
+
+Flags:
 - `--dry-run`: print planned actions without deleting cache files
 - `--json`: emit a machine-readable execution report
 
 ## Build
-TBD 
+
+> Go 1.22 or higher required
+
+```
+go mod download
+mage build
+```
+
 
 
 ## License

@@ -13,9 +13,11 @@ type Preset string
 
 const (
 	PresetCLIQuick     Preset = "cli-quick"
+	PresetCLISoft      Preset = "cli-soft"
 	PresetCLIStandard  Preset = "cli-standard"
 	PresetCLIDeep      Preset = "cli-deep"
 	PresetTrayQuick    Preset = "tray-quick"
+	PresetTraySoft     Preset = "tray-soft"
 	PresetTrayStandard Preset = "tray-standard"
 	PresetTrayDeep     Preset = "tray-deep"
 )
@@ -26,12 +28,16 @@ func RequestForPreset(preset Preset, dryRun bool) (RunRequest, error) {
 	switch preset {
 	case PresetCLIQuick:
 		return RunRequest{Mode: repair.ModeQuick, DryRun: dryRun, Trigger: Trigger{Kind: TriggerManualCLI, Source: "cmd/iconsrefresh", At: now}}, nil
+	case PresetCLISoft:
+		return RunRequest{Mode: repair.ModeSoft, DryRun: dryRun, Trigger: Trigger{Kind: TriggerManualCLI, Source: "cmd/iconsrefresh", At: now}}, nil
 	case PresetCLIStandard:
 		return RunRequest{Mode: repair.ModeStandard, DryRun: dryRun, Trigger: Trigger{Kind: TriggerManualCLI, Source: "cmd/iconsrefresh", At: now}}, nil
 	case PresetCLIDeep:
 		return RunRequest{Mode: repair.ModeDeep, DryRun: dryRun, Trigger: Trigger{Kind: TriggerManualCLI, Source: "cmd/iconsrefresh", At: now}}, nil
 	case PresetTrayQuick:
 		return RunRequest{Mode: repair.ModeQuick, DryRun: dryRun, Trigger: Trigger{Kind: TriggerManualTray, Source: "cmd/iconsrefresh-tray", At: now}}, nil
+	case PresetTraySoft:
+		return RunRequest{Mode: repair.ModeSoft, DryRun: dryRun, Trigger: Trigger{Kind: TriggerManualTray, Source: "cmd/iconsrefresh-tray", At: now}}, nil
 	case PresetTrayStandard:
 		return RunRequest{Mode: repair.ModeStandard, DryRun: dryRun, Trigger: Trigger{Kind: TriggerManualTray, Source: "cmd/iconsrefresh-tray", At: now}}, nil
 	case PresetTrayDeep:

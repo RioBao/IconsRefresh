@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/crazy-max/IconsRefresh/internal/engine"
+	"github.com/crazy-max/IconsRefresh/internal/repair"
 )
 
 type config struct {
@@ -57,6 +58,8 @@ func parseArgs(args []string) (config, error) {
 	switch strings.ToLower(strings.TrimSpace(positional[0])) {
 	case "quick":
 		cfg.Preset = engine.PresetCLIQuick
+	case "soft":
+		cfg.Preset = engine.PresetCLISoft
 	case "standard":
 		cfg.Preset = engine.PresetCLIStandard
 	case "deep":
@@ -72,7 +75,8 @@ func usage() string {
 	return strings.TrimSpace(`Usage: IconsRefresh [--dry-run] [--json] <mode>
 
 Modes:
-  quick      Run shell refresh and clean IconCache.db only
+  quick      Run ie4uinit + shell notify, clean IconCache.db
+  soft       Clean IconCache.db only
   standard   Clean IconCache.db and Explorer iconcache_*.db
   deep       Standard mode + Search AppIconCache cleanup`)
 }
@@ -97,12 +101,20 @@ func run(cfg config) error {
 	}
 
 	if cfg.JSON {
-		return nil
+		return resultError(result.Result)
 	}
 
 	fmt.Printf("mode=%s dry-run=%t targets=%d\n", result.Mode, result.DryRun, len(result.Targets))
 	if result.Result.IE4UInit != nil {
 		fmt.Printf("ie4uinit: ran=%t exit=%d warning=%q\n", result.Result.IE4UInit.Ran, result.Result.IE4UInit.ExitCode, result.Result.IE4UInit.Warning)
+	}
+	if result.Result.ShellNotify != nil {
+		fmt.Printf("shell_notify: assoc_changed=%t env_broadcast=%t timeout_ms=%d warning=%q\n",
+			result.Result.ShellNotify.AssocChangedSent,
+			result.Result.ShellNotify.EnvironmentBroadcast,
+			result.Result.ShellNotify.EnvironmentTimeoutMS,
+			result.Result.ShellNotify.Warning,
+		)
 	}
 	for _, p := range result.Result.Paths {
 		fmt.Printf("path=%q found=%t deleted=%t skipped=%t", p.Path, p.Found, p.Deleted, p.Skipped)
@@ -112,5 +124,25 @@ func run(cfg config) error {
 		fmt.Println()
 	}
 
-	return nil
+	return resultError(result.Result)
+}
+
+// isDeletionFailure returns true for errors that occurred on a target that was
+// found and validated — i.e., a real deletion failure, not a "not found" skip.
+func isDeletionFailure(p repair.PathResult) bool {
+	return p.Error != "" && !(p.Skipped && !p.Found)
+}
+
+// resultError returns a non-nil error if any deletion failures are present.
+func resultError(result repair.Result) error {
+	count := 0
+	for _, p := range result.Paths {
+		if isDeletionFailure(p) {
+			count++
+		}
+	}
+	if count == 0 {
+		return nil
+	}
+	return fmt.Errorf("cache refresh completed with %d path error(s)", count)
 }
