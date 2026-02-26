@@ -44,7 +44,7 @@ Windows 11 cache targets:
 
 ## Build
 
-> Go 1.14 or higher required
+> Go 1.22 or higher required
 
 ```
 go mod download
