@@ -115,7 +115,7 @@ func isDeletionFailure(pathResult repair.PathResult) bool {
 		return false
 	}
 
-	if pathResult.Skipped && !pathResult.Found && pathResult.Error == "not found" {
+	if pathResult.Skipped && !pathResult.Found {
 		return false
 	}
 

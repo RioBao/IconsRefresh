@@ -17,7 +17,7 @@ func TestResultError(t *testing.T) {
 			name: "no path errors",
 			result: repair.Result{Paths: []repair.PathResult{
 				{Path: "a", Deleted: true},
-				{Path: "b", Skipped: true, Error: "not found"},
+				{Path: "b", Skipped: true, Error: "missing file"},
 			}},
 			want: false,
 		},
@@ -54,7 +54,7 @@ func TestIsDeletionFailure(t *testing.T) {
 		},
 		{
 			name:       "expected missing target",
-			pathResult: repair.PathResult{Path: "a", Skipped: true, Error: "not found"},
+			pathResult: repair.PathResult{Path: "a", Skipped: true, Error: "missing file"},
 			want:       false,
 		},
 		{
