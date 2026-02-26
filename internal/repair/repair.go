@@ -179,7 +179,10 @@ func ValidateCandidate(path string) error {
 		return fmt.Errorf("stat path: %w", err)
 	}
 	if info.IsDir() {
-		return fmt.Errorf("path %q is a directory", absolutePath)
+		// AppIconCache is the only valid directory target; all others must be files.
+		if !strings.EqualFold(filepath.Base(absolutePath), "AppIconCache") {
+			return fmt.Errorf("path %q is a directory", absolutePath)
+		}
 	}
 
 	return nil
@@ -233,8 +236,14 @@ func DeleteTargets(targets []Target) Result {
 		}
 
 		entry.Found = true
-		if err := os.Remove(target.Path); err != nil {
-			entry.Error = err.Error()
+		var removeErr error
+		if target.Kind == TargetSearchAppCache {
+			removeErr = os.RemoveAll(target.Path)
+		} else {
+			removeErr = os.Remove(target.Path)
+		}
+		if removeErr != nil {
+			entry.Error = removeErr.Error()
 			result.Paths = append(result.Paths, entry)
 			continue
 		}

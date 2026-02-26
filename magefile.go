@@ -51,27 +51,46 @@ func Build() error {
 			}
 			resourceDisabled = true
 		}
-		output := releasePath(arch)
-		args := []string{
-			"build",
-			"-trimpath",
-			"-buildvcs=false",
-			"-o", output,
-			"-v",
-			"-ldflags", "-s -w -buildid= -H=windowsgui",
-			"./cmd/iconsrefresh",
-		}
 
 		env := mapsClone(goEnv)
 		env["GOARCH"] = arch
 
-		fmt.Printf("⚙️ Go build (%s) -> %s...\n", arch, output)
-		if err := sh.RunWith(env, mg.GoCmd(), args...); err != nil {
+		cliOut := releasePath(arch)
+		cliArgs := []string{
+			"build",
+			"-trimpath",
+			"-buildvcs=false",
+			"-o", cliOut,
+			"-v",
+			"-ldflags", "-s -w -buildid=",
+			"./cmd/iconsrefresh",
+		}
+		fmt.Printf("⚙️ Go build CLI (%s) -> %s...\n", arch, cliOut)
+		if err := sh.RunWith(env, mg.GoCmd(), cliArgs...); err != nil {
 			if resourceDisabled {
 				_ = os.Rename(resourcePath+".bak", resourcePath)
 			}
 			return err
 		}
+
+		trayOut := releaseTrayPath(arch)
+		trayArgs := []string{
+			"build",
+			"-trimpath",
+			"-buildvcs=false",
+			"-o", trayOut,
+			"-v",
+			"-ldflags", "-s -w -buildid= -H=windowsgui",
+			"./cmd/iconsrefresh-tray",
+		}
+		fmt.Printf("⚙️ Go build tray (%s) -> %s...\n", arch, trayOut)
+		if err := sh.RunWith(env, mg.GoCmd(), trayArgs...); err != nil {
+			if resourceDisabled {
+				_ = os.Rename(resourcePath+".bak", resourcePath)
+			}
+			return err
+		}
+
 		if resourceDisabled {
 			if err := os.Rename(resourcePath+".bak", resourcePath); err != nil {
 				return err
@@ -134,6 +153,10 @@ func envTrue(key string) bool {
 
 func releasePath(arch string) string {
 	return path.Join(binPath, fmt.Sprintf("IconsRefresh_windows_%s.exe", arch))
+}
+
+func releaseTrayPath(arch string) string {
+	return path.Join(binPath, fmt.Sprintf("IconsRefreshTray_windows_%s.exe", arch))
 }
 
 func mapsClone(input map[string]string) map[string]string {
