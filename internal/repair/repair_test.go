@@ -45,6 +45,24 @@ func TestTargetsForMode(t *testing.T) {
 	}
 }
 
+func TestShouldRestartExplorer(t *testing.T) {
+	testCases := []struct {
+		mode Mode
+		want bool
+	}{
+		{mode: ModeQuick, want: false},
+		{mode: ModeSoft, want: false},
+		{mode: ModeStandard, want: true},
+		{mode: ModeDeep, want: true},
+	}
+
+	for _, tc := range testCases {
+		if got := ShouldRestartExplorer(tc.mode); got != tc.want {
+			t.Fatalf("ShouldRestartExplorer(%q)=%v, want %v", tc.mode, got, tc.want)
+		}
+	}
+}
+
 func TestShouldRunIE4UInit(t *testing.T) {
 	testCases := []struct {
 		mode Mode

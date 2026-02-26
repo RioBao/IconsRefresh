@@ -105,6 +105,13 @@ func run(cfg config) error {
 	}
 
 	fmt.Printf("mode=%s dry-run=%t targets=%d\n", result.Mode, result.DryRun, len(result.Targets))
+	if result.Result.ExplorerRestart != nil {
+		fmt.Printf("explorer_restart: stopped=%t restarted=%t warning=%q\n",
+			result.Result.ExplorerRestart.Stopped,
+			result.Result.ExplorerRestart.Restarted,
+			result.Result.ExplorerRestart.Warning,
+		)
+	}
 	if result.Result.IE4UInit != nil {
 		fmt.Printf("ie4uinit: ran=%t exit=%d warning=%q\n", result.Result.IE4UInit.Ran, result.Result.IE4UInit.ExitCode, result.Result.IE4UInit.Warning)
 	}

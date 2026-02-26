@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	internalwindows "github.com/crazy-max/IconsRefresh/internal/windows"
 )
@@ -46,9 +47,10 @@ type PathResult struct {
 
 // Result contains path-level outcomes for a repair execution.
 type Result struct {
-	IE4UInit    *internalwindows.IE4UInitResult
-	ShellNotify *internalwindows.ShellNotifyResult
-	Paths       []PathResult
+	ExplorerRestart *internalwindows.ExplorerRestartResult
+	IE4UInit        *internalwindows.IE4UInitResult
+	ShellNotify     *internalwindows.ShellNotifyResult
+	Paths           []PathResult
 }
 
 // DiscoverCacheTargets finds known Windows icon cache paths in LOCALAPPDATA.
@@ -127,14 +129,53 @@ func ShouldRunIE4UInit(mode Mode) bool {
 	}
 }
 
-// DeleteTargetsForMode deletes cache targets, then runs shell refresh steps.
-// Order matters: files must be gone before notifying the shell so Explorer
-// rebuilds the cache from scratch rather than reloading stale data.
+// ShouldRestartExplorer reports whether Explorer must be stopped and restarted
+// to release its lock on the cache files targeted by the mode.
+func ShouldRestartExplorer(mode Mode) bool {
+	switch mode {
+	case ModeStandard, ModeDeep:
+		return true
+	default:
+		return false
+	}
+}
+
+// DeleteTargetsForMode deletes cache targets then runs shell refresh steps.
+//
+// For standard and deep modes, Explorer is stopped before deletion (it holds
+// iconcache_*.db open) and restarted afterwards. Order is:
+//
+//  1. Stop Explorer (if needed)
+//  2. Delete cache files
+//  3. Restart Explorer (if stopped)
+//  4. ie4uinit -show (signals the now-running shell)
+//  5. SHChangeNotify + SendMessageTimeoutW
 func DeleteTargetsForMode(mode Mode, targets []Target) Result {
 	result := Result{}
 
+	// Stop Explorer so its file locks on iconcache_*.db are released.
+	if ShouldRestartExplorer(mode) {
+		stopResult := internalwindows.StopExplorer()
+		result.ExplorerRestart = &stopResult
+	}
+
+	// Delete cache files (handles released if Explorer was stopped).
 	deletion := DeleteTargets(targets)
 	result.Paths = deletion.Paths
+
+	// Restart Explorer unconditionally after stopping it, even if some deletions
+	// failed — the user must not be left without a shell.
+	if result.ExplorerRestart != nil && result.ExplorerRestart.Stopped {
+		startResult := internalwindows.StartExplorer()
+		result.ExplorerRestart.Restarted = startResult.Restarted
+		if startResult.Warning != "" && result.ExplorerRestart.Warning == "" {
+			result.ExplorerRestart.Warning = startResult.Warning
+		}
+		// Wait for Explorer to initialize before signalling it below.
+		if startResult.Restarted {
+			time.Sleep(1500 * time.Millisecond)
+		}
+	}
 
 	if ShouldRunIE4UInit(mode) {
 		ie4uinitResult := internalwindows.RunIE4UInitShow()
