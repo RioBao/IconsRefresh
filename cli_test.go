@@ -7,6 +7,40 @@ import (
 	"github.com/crazy-max/IconsRefresh/internal/repair"
 )
 
+func TestResultError(t *testing.T) {
+	testCases := []struct {
+		name   string
+		result repair.Result
+		want   bool
+	}{
+		{
+			name: "no path errors",
+			result: repair.Result{Paths: []repair.PathResult{
+				{Path: "a", Deleted: true},
+				{Path: "b", Skipped: true, Error: "not found"},
+			}},
+			want: false,
+		},
+		{
+			name: "has delete error",
+			result: repair.Result{Paths: []repair.PathResult{
+				{Path: "a", Error: "access denied"},
+				{Path: "b", Deleted: true},
+			}},
+			want: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := resultError(tc.result)
+			if got := err != nil; got != tc.want {
+				t.Fatalf("resultError() error=%v, wantError=%v", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestParseArgs_RequiresMode(t *testing.T) {
 	_, err := parseArgs(nil)
 	if err == nil {

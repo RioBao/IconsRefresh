@@ -74,7 +74,10 @@ func run(cfg config) error {
 	if cfg.JSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(result)
+		if err := enc.Encode(result); err != nil {
+			return err
+		}
+		return resultError(result)
 	}
 
 	if result.IE4UInit != nil {
@@ -88,7 +91,23 @@ func run(cfg config) error {
 		fmt.Println()
 	}
 
-	return nil
+	return resultError(result)
+}
+
+func resultError(result repair.Result) error {
+	failures := 0
+	for _, p := range result.Paths {
+		if p.Error == "" || p.Error == "not found" {
+			continue
+		}
+		failures++
+	}
+
+	if failures == 0 {
+		return nil
+	}
+
+	return fmt.Errorf("cache refresh completed with %d path error(s)", failures)
 }
 
 func printDryRun(cfg config, selected []repair.Target) error {
