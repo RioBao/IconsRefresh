@@ -41,6 +41,38 @@ func TestResultError(t *testing.T) {
 	}
 }
 
+func TestIsDeletionFailure(t *testing.T) {
+	testCases := []struct {
+		name       string
+		pathResult repair.PathResult
+		want       bool
+	}{
+		{
+			name:       "no error",
+			pathResult: repair.PathResult{Path: "a", Deleted: true},
+			want:       false,
+		},
+		{
+			name:       "expected missing target",
+			pathResult: repair.PathResult{Path: "a", Skipped: true, Error: "not found"},
+			want:       false,
+		},
+		{
+			name:       "real delete failure",
+			pathResult: repair.PathResult{Path: "a", Found: true, Error: "access denied"},
+			want:       true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := isDeletionFailure(tc.pathResult); got != tc.want {
+				t.Fatalf("isDeletionFailure()=%v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestParseArgs_RequiresMode(t *testing.T) {
 	_, err := parseArgs(nil)
 	if err == nil {

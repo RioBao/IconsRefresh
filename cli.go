@@ -97,7 +97,7 @@ func run(cfg config) error {
 func resultError(result repair.Result) error {
 	failures := 0
 	for _, p := range result.Paths {
-		if p.Error == "" || p.Error == "not found" {
+		if !isDeletionFailure(p) {
 			continue
 		}
 		failures++
@@ -110,6 +110,17 @@ func resultError(result repair.Result) error {
 	return fmt.Errorf("cache refresh completed with %d path error(s)", failures)
 }
 
+func isDeletionFailure(pathResult repair.PathResult) bool {
+	if pathResult.Error == "" {
+		return false
+	}
+
+	if pathResult.Skipped && !pathResult.Found && pathResult.Error == "not found" {
+		return false
+	}
+
+	return true
+}
 func printDryRun(cfg config, selected []repair.Target) error {
 	if cfg.JSON {
 		enc := json.NewEncoder(os.Stdout)
