@@ -22,9 +22,31 @@ This project is being revived and cleaned up in 2026.
 
 Screenshot coming soon.
 
+## Download
+
+- Latest release: [Download here](../../releases/latest)
+- All releases: [Release list](../../releases)
+- Release files: `IconsRefresh.exe`, `IconsRefreshUI.exe`, `checksums.txt`
+
+### Publishing a release (maintainers)
+
+Pushing a tag like `v0.1.0` triggers GitHub Actions to:
+
+- build `IconsRefresh.exe` and `IconsRefreshUI.exe`
+- generate `checksums.txt`
+- create a GitHub Release and upload these files
+
+Example:
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
 ## Getting Started
 
-No public release package is published yet. Build from source for now.
+If you only want to use the app, download binaries from Releases.
+Build from source if you want to develop or modify it.
 
 ### Prerequisites
 
