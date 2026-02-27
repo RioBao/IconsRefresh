@@ -3,14 +3,17 @@
 
 /.dev
 /bin
+/out
 /vendor
 /.claude
 /.tmp-edge-profile
 /.gocache
+/.go-cache
 /mage_output_file.go
 /*.syso
 /cmd/iconsrefresh/resource.syso
 /cmd/iconsrefresh-tray/resource.syso
 /cmd/iconsrefresh-tray/ui-icon.png
+/cmd/iconsrefresh-tray/*.go.[0-9]*
 /*.exe
 /versioninfo.json

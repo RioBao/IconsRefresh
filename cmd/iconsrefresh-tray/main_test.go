@@ -19,7 +19,7 @@ func TestLogLineColor(t *testing.T) {
 		{line: "✓ ok", want: [4]uint8{colSuccess.R, colSuccess.G, colSuccess.B, colSuccess.A}},
 		{line: "✗ fail", want: [4]uint8{colFail.R, colFail.G, colFail.B, colFail.A}},
 		{line: "⚠ warn", want: [4]uint8{colWarn.R, colWarn.G, colWarn.B, colWarn.A}},
-		{line: "— step", want: [4]uint8{colStep.R, colStep.G, colStep.B, colStep.A}},
+		{line: "- step", want: [4]uint8{colStep.R, colStep.G, colStep.B, colStep.A}},
 		{line: "other", want: [4]uint8{colText2.R, colText2.G, colText2.B, colText2.A}},
 	}
 
@@ -60,9 +60,9 @@ func TestBuildResultSummaryAndLines(t *testing.T) {
 	}
 	assertContains(t, got.logLines, "✓  IconCache.db")
 	assertContains(t, got.logLines, "✗  iconcache_64.db: access denied")
-	assertContains(t, got.logLines, "—  Explorer restarted")
-	assertContains(t, got.logLines, "—  ie4uinit ran")
-	assertContains(t, got.logLines, "—  Shell notified")
+	assertContains(t, got.logLines, "-  Explorer restarted")
+	assertContains(t, got.logLines, "-  ie4uinit ran")
+	assertContains(t, got.logLines, "-  Shell notified")
 	assertContains(t, got.logLines, "⚠  restart warning")
 	assertContains(t, got.logLines, "⚠  notify warning")
 	assertContains(t, got.logLines, "⚠  ie4uinit warning")

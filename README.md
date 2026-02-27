@@ -1,62 +1,110 @@
-## Update 2026: Project revival
+﻿# IconsRefresh
 
-This project was unmaintained for several years and is now being cleaned up and modernized.
+Refresh Windows icon caches for Desktop, Start Menu, and Taskbar.
 
-## About
+## Project Status
 
-Icons Refresh is a program written in [Go](https://golang.org/) to refresh Desktop, Start Menu and Taskbar icons
-without restart Explorer on Windows.
+This project is being revived and cleaned up in 2026.
 
-## Download
+## Compatibility
 
-TBD
+- OS: Windows 11
+- CPU: x64 / amd64
+- Release binaries target `windows/amd64`
+- Windows 11 ARM64 is not natively supported (works only with x64 emulation)
 
-### Binary compatibility
+## Binaries
 
-Current release binaries target `windows/amd64` only.
+- `IconsRefresh.exe`: command-line tool
+- `IconsRefreshUI.exe`: interactive desktop UI
 
-- Supported: Windows 11 on x64 (Intel/AMD) machines
-- Not natively supported: Windows 11 ARM64 (unless x64 emulation is available)
+## UI Screenshot
 
-## Usage
+Screenshot coming soon.
 
-```text
-IconsRefresh.exe [--dry-run] [--json] <quick|soft|standard|deep>
-IconsRefreshUI.exe
+## Getting Started
+
+No public release package is published yet. Build from source for now.
+
+### Prerequisites
+
+- Go `1.23.8+`
+- Mage build tool
+
+If your local Go version is older, Go may auto-download the required toolchain.
+
+Install Mage:
+
+```powershell
+go install github.com/magefile/mage@latest
 ```
 
-`IconsRefreshUI.exe` is an interactive UI app; it does not take command-line mode flags.
+Ensure your Go bin folder is in `PATH` (usually `%USERPROFILE%\\go\\bin`).
 
-Modes:
+### Build
 
-| Mode | ie4uinit | Shell notify | IconCache.db | Explorer iconcache_*.db | AppIconCache |
-|------|----------|--------------|--------------|-------------------------|--------------|
-| `quick` | ✓ | ✓ | ✓ | | |
-| `soft` | | ✓ | ✓ | | |
-| `standard` | ✓ | ✓ | ✓ | ✓ | |
-| `deep` | ✓ | ✓ | ✓ | ✓ | ✓ |
-
-Windows 11 cache targets:
-- `%LocalAppData%\IconCache.db`
-- `%LocalAppData%\Microsoft\Windows\Explorer\iconcache_*.db`
-- `%LocalAppData%\Packages\Microsoft.Windows.Search_*\LocalState\AppIconCache`
-
-CLI flags (`IconsRefresh.exe`):
-- `--dry-run`: print planned actions without deleting cache files
-- `--json`: emit a machine-readable execution report
-
-## Build
-
-> Go 1.23.8 or higher required
-
-```
+```powershell
 go mod download
 mage build
 ```
 
+Output binaries:
 
+- `bin\\IconsRefresh.exe`
+- `bin\\IconsRefreshUI.exe`
+
+If `mage` is not in your `PATH`, run:
+
+```powershell
+go run github.com/magefile/mage build
+```
+
+## Usage
+
+### CLI
+
+```text
+IconsRefresh.exe [--dry-run] [--json] <quick|soft|standard|deep>
+```
+
+Flags:
+
+- `--dry-run`: print planned actions without deleting cache files
+- `--json`: emit machine-readable output
+
+### UI
+
+```text
+IconsRefreshUI.exe
+```
+
+The UI is interactive and does not accept mode flags.
+It offers `Quick`, `Standard`, and `Deep` buttons. `soft` is CLI-only.
+
+## Modes
+
+| Mode | ie4uinit | Shell notify | IconCache.db | Explorer iconcache_*.db | AppIconCache |
+|------|----------|--------------|--------------|-------------------------|--------------|
+| `quick` | Yes | Yes | Yes | No | No |
+| `soft` | No | Yes | Yes | No | No |
+| `standard` | Yes | Yes | Yes | Yes | No |
+| `deep` | Yes | Yes | Yes | Yes | Yes |
+
+## Windows Cache Targets
+
+- `%LocalAppData%\\IconCache.db`
+- `%LocalAppData%\\Microsoft\\Windows\\Explorer\\iconcache_*.db`
+- `%LocalAppData%\\Packages\\Microsoft.Windows.Search_*\\LocalState\\AppIconCache`
+
+## Development
+
+Run tests:
+
+```powershell
+go test ./...
+```
 
 ## License
 
-MIT. See `LICENSE` for more details.<br />
-Icon credit to Oliver Scholtz
+MIT. See `LICENSE` for details.  
+Icon credit: Oliver Scholtz.
