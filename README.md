@@ -6,6 +6,10 @@ Refresh Windows icon caches for Desktop, Start Menu, and Taskbar.
 
 This project is being revived and cleaned up in 2026.
 
+## UI Screenshot
+
+![IconsRefresh UI](screenshot-ui.png)
+
 ## Compatibility
 
 - OS: Windows 11
@@ -17,10 +21,6 @@ This project is being revived and cleaned up in 2026.
 
 - `IconsRefresh.exe`: command-line tool
 - `IconsRefreshUI.exe`: interactive desktop UI
-
-## UI Screenshot
-
-![IconsRefresh UI](screenshot-ui.png)
 
 ## Download
 
@@ -128,5 +128,4 @@ go test ./...
 
 ## License
 
-MIT. See `LICENSE` for details.  
-Icon credit: Oliver Scholtz.
+MIT. See `LICENSE` for details.
