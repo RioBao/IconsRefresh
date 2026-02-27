@@ -6,11 +6,9 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
-	"slices"
 	"strings"
 	"text/template"
 
@@ -30,72 +28,42 @@ var (
 	}
 )
 
-// Build builds one or more Windows binaries.
-//
-// Defaults to amd64 only.
-// Optional targets:
-//   - set ICONSREFRESH_BUILD_ARM64=1 to include arm64
-//   - set ICONSREFRESH_BUILD_386=1 to include 386
+// Build builds Windows binaries for amd64.
 func Build() error {
 	mg.Deps(Clean)
 	mg.Deps(Generate)
 
-	resourcePath := "resource.syso"
-	hasResource := fileExists(resourcePath)
+	env := mapsClone(goEnv)
+	env["GOARCH"] = "amd64"
 
-	for _, arch := range buildArchMatrix() {
-		resourceDisabled := false
-		if arch == "arm64" && hasResource {
-			if err := os.Rename(resourcePath, resourcePath+".bak"); err != nil {
-				return err
-			}
-			resourceDisabled = true
-		}
+	cliOut := releasePath()
+	cliArgs := []string{
+		"build",
+		"-trimpath",
+		"-buildvcs=false",
+		"-o", cliOut,
+		"-v",
+		"-ldflags", "-s -w -buildid=",
+		"./cmd/iconsrefresh",
+	}
+	fmt.Printf("⚙️ Go build CLI (amd64) -> %s...\n", cliOut)
+	if err := sh.RunWith(env, mg.GoCmd(), cliArgs...); err != nil {
+		return err
+	}
 
-		env := mapsClone(goEnv)
-		env["GOARCH"] = arch
-
-		cliOut := releasePath(arch)
-		cliArgs := []string{
-			"build",
-			"-trimpath",
-			"-buildvcs=false",
-			"-o", cliOut,
-			"-v",
-			"-ldflags", "-s -w -buildid=",
-			"./cmd/iconsrefresh",
-		}
-		fmt.Printf("⚙️ Go build CLI (%s) -> %s...\n", arch, cliOut)
-		if err := sh.RunWith(env, mg.GoCmd(), cliArgs...); err != nil {
-			if resourceDisabled {
-				_ = os.Rename(resourcePath+".bak", resourcePath)
-			}
-			return err
-		}
-
-		trayOut := releaseTrayPath(arch)
-		trayArgs := []string{
-			"build",
-			"-trimpath",
-			"-buildvcs=false",
-			"-o", trayOut,
-			"-v",
-			"-ldflags", "-s -w -buildid= -H=windowsgui",
-			"./cmd/iconsrefresh-tray",
-		}
-		fmt.Printf("⚙️ Go build tray (%s) -> %s...\n", arch, trayOut)
-		if err := sh.RunWith(env, mg.GoCmd(), trayArgs...); err != nil {
-			if resourceDisabled {
-				_ = os.Rename(resourcePath+".bak", resourcePath)
-			}
-			return err
-		}
-
-		if resourceDisabled {
-			if err := os.Rename(resourcePath+".bak", resourcePath); err != nil {
-				return err
-			}
-		}
+	trayOut := releaseTrayPath()
+	trayArgs := []string{
+		"build",
+		"-trimpath",
+		"-buildvcs=false",
+		"-o", trayOut,
+		"-v",
+		"-ldflags", "-s -w -buildid= -H=windowsgui",
+		"./cmd/iconsrefresh-tray",
+	}
+	fmt.Printf("⚙️ Go build tray (amd64) -> %s...\n", trayOut)
+	if err := sh.RunWith(env, mg.GoCmd(), trayArgs...); err != nil {
+		return err
 	}
 
 	return nil
@@ -112,16 +80,25 @@ func Clean() error {
 	return nil
 }
 
-// Generate Run go generate
+// Generate builds versioninfo.json, ui icon assets, and resource.syso for each cmd.
 func Generate() error {
 	mg.Deps(Download)
+	mg.Deps(convertIcon)
 	mg.Deps(versionInfo)
 
-	fmt.Println("⚙️ Go generate...")
-	if err := sh.RunV(mg.GoCmd(), "generate", "-v"); err != nil {
-		return err
+	fmt.Println("⚙️ Generating Windows resources...")
+	for _, out := range []string{
+		"cmd/iconsrefresh/resource.syso",
+		"cmd/iconsrefresh-tray/resource.syso",
+	} {
+		fmt.Printf("  → %s\n", out)
+		if err := sh.RunV(mg.GoCmd(), "run",
+			"github.com/josephspurrier/goversioninfo/cmd/goversioninfo",
+			"-o", out,
+		); err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
@@ -135,28 +112,12 @@ func Download() error {
 	return nil
 }
 
-func buildArchMatrix() []string {
-	arches := []string{"amd64"}
-	if envTrue("ICONSREFRESH_BUILD_ARM64") {
-		arches = append(arches, "arm64")
-	}
-	if envTrue("ICONSREFRESH_BUILD_386") {
-		arches = append(arches, "386")
-	}
-	return arches
+func releasePath() string {
+	return path.Join(binPath, "IconsRefresh.exe")
 }
 
-func envTrue(key string) bool {
-	value := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
-	return slices.Contains([]string{"1", "true", "yes", "on"}, value)
-}
-
-func releasePath(arch string) string {
-	return path.Join(binPath, fmt.Sprintf("IconsRefresh_windows_%s.exe", arch))
-}
-
-func releaseTrayPath(arch string) string {
-	return path.Join(binPath, fmt.Sprintf("IconsRefreshTray_windows_%s.exe", arch))
+func releaseTrayPath() string {
+	return path.Join(binPath, "IconsRefreshUI.exe")
 }
 
 func mapsClone(input map[string]string) map[string]string {
@@ -190,11 +151,11 @@ func version() string {
 
 // tag returns the git tag for the current branch or "" if none.
 func tag() string {
-	s, _ := sh.Output("bash", "-c", "git describe --abbrev=0 --tags 2> /dev/null")
-	if s == "" {
+	s, err := sh.Output("git", "describe", "--abbrev=0", "--tags")
+	if err != nil || strings.TrimSpace(s) == "" {
 		return "0.0.0"
 	}
-	return s
+	return strings.TrimSpace(s)
 }
 
 // hash returns the git hash for the current repo or "" if none.
@@ -255,6 +216,19 @@ func versionInfo() error {
 	})
 }
 
+// convertIcon generates the tray UI icon asset from icon.png.
+// Resource icons are intentionally omitted so Windows uses the default EXE icon.
+func convertIcon() error {
+	if !fileExists("icon.png") {
+		if fileExists("cmd/iconsrefresh-tray/icon.png") {
+			fmt.Println("warning: icon.png not found, reusing existing cmd/iconsrefresh-tray/icon.png")
+			return nil
+		}
+		return fmt.Errorf("icon.png not found and cmd/iconsrefresh-tray/icon.png is missing")
+	}
+	return sh.RunV(mg.GoCmd(), "run", "./cmd/genicon/main.go")
+}
+
 func createDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return os.MkdirAll(path, 0o777)
@@ -278,66 +252,5 @@ func cleanDir(dir string) error {
 			return err
 		}
 	}
-	return nil
-}
-
-func copyDir(src string, dst string) error {
-	var err error
-	var fds []os.DirEntry
-	var srcinfo os.FileInfo
-
-	if srcinfo, err = os.Stat(src); err != nil {
-		return err
-	}
-
-	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
-		return err
-	}
-
-	if fds, err = os.ReadDir(src); err != nil {
-		return err
-	}
-
-	for _, fd := range fds {
-		srcfp := path.Join(src, fd.Name())
-		dstfp := path.Join(dst, fd.Name())
-
-		if fd.IsDir() {
-			if err = copyDir(srcfp, dstfp); err != nil {
-				fmt.Println(err)
-			}
-		} else {
-			if err = copyFile(srcfp, dstfp); err != nil {
-				fmt.Println(err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func copyFile(src string, dest string) error {
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-
-	destFile, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = io.Copy(destFile, srcFile)
-	if err != nil {
-		return err
-	}
-
-	err = destFile.Sync()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

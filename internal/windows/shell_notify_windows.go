@@ -35,15 +35,14 @@ func NotifyShellRefresh(timeoutMS uint32) ShellNotifyResult {
 	}
 
 	// https://docs.microsoft.com/en-us/windows/desktop/api/shlobj_core/nf-shlobj_core-shchangenotify
-	if _, _, err := syscall.NewLazyDLL("shell32.dll").NewProc("SHChangeNotify").Call(
+	// SHChangeNotify is void — it has no return value and does not set a meaningful
+	// last error, so we do not check the third return value from Call.
+	syscall.NewLazyDLL("shell32.dll").NewProc("SHChangeNotify").Call(
 		uintptr(shcneAssocChanged),
 		uintptr(shcnfIDList),
 		0,
 		0,
-	); err != syscall.Errno(0) {
-		result.Warning = fmt.Sprintf("SHChangeNotify failed: %v", err)
-		return result
-	}
+	)
 	result.AssocChangedSent = true
 
 	env, envErr := syscall.UTF16PtrFromString("Environment")
@@ -53,7 +52,7 @@ func NotifyShellRefresh(timeoutMS uint32) ShellNotifyResult {
 	}
 
 	// https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-sendmessagetimeoutw
-	if _, _, err := syscall.NewLazyDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(
+	r1, _, err := syscall.NewLazyDLL("user32.dll").NewProc("SendMessageTimeoutW").Call(
 		uintptr(hwndBroadcast),
 		uintptr(wmSettingChange),
 		0,
@@ -61,8 +60,13 @@ func NotifyShellRefresh(timeoutMS uint32) ShellNotifyResult {
 		uintptr(smtoAbortIfHung),
 		uintptr(timeoutMS),
 		0,
-	); err != syscall.Errno(0) {
-		result.Warning = fmt.Sprintf("SendMessageTimeoutW failed: %v", err)
+	)
+	if r1 == 0 {
+		if err != syscall.Errno(0) {
+			result.Warning = fmt.Sprintf("SendMessageTimeoutW failed: %v", err)
+		} else {
+			result.Warning = "SendMessageTimeoutW failed"
+		}
 		return result
 	}
 	result.EnvironmentBroadcast = true

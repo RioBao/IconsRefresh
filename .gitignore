@@ -4,6 +4,13 @@
 /.dev
 /bin
 /vendor
+/.claude
+/.tmp-edge-profile
+/.gocache
+/mage_output_file.go
 /*.syso
+/cmd/iconsrefresh/resource.syso
+/cmd/iconsrefresh-tray/resource.syso
+/cmd/iconsrefresh-tray/ui-icon.png
 /*.exe
 /versioninfo.json
