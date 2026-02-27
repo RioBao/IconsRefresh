@@ -20,7 +20,7 @@ This project is being revived and cleaned up in 2026.
 
 ## UI Screenshot
 
-Screenshot coming soon.
+![IconsRefresh UI](screenshot-ui.png)
 
 ## Download
 
